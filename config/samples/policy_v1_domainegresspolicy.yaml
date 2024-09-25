@@ -1,0 +1,9 @@
+apiVersion: policy.icefed.io/v1
+kind: DomainEgressPolicy
+metadata:
+  labels:
+    app.kubernetes.io/name: domain-egress-policy
+    app.kubernetes.io/managed-by: kustomize
+  name: domainegresspolicy-sample
+spec:
+  # TODO(user): Add fields here

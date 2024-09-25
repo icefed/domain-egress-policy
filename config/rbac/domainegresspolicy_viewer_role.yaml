@@ -1,0 +1,23 @@
+# permissions for end users to view domainegresspolicies.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: domain-egress-policy
+    app.kubernetes.io/managed-by: kustomize
+  name: domainegresspolicy-viewer-role
+rules:
+- apiGroups:
+  - policy.icefed.io
+  resources:
+  - domainegresspolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - policy.icefed.io
+  resources:
+  - domainegresspolicies/status
+  verbs:
+  - get

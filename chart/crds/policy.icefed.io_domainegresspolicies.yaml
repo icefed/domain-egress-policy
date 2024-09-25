@@ -1,0 +1,168 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: domainegresspolicies.policy.icefed.io
+spec:
+  group: policy.icefed.io
+  names:
+    kind: DomainEgressPolicy
+    listKind: DomainEgressPolicyList
+    plural: domainegresspolicies
+    singular: domainegresspolicy
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: DomainEgressPolicy is the Schema for the domainegresspolicies
+          API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DomainEgressPolicySpec defines the desired state of DomainEgressPolicy
+            properties:
+              domainEgress:
+                description: |-
+                  domainEgress is a list of egress rules to be applied to the selected pods. Outgoing traffic
+                  is allowed if there are no DomainEgressPolicies selecting the pod (and cluster policy
+                  otherwise allows the traffic), OR if the traffic matches at least one egress rule
+                  across all of the DomainEgressPolicy objects whose podSelector matches the pod. If
+                  this field is empty then this DomainEgressPolicy limits all outgoing traffic (and serves
+                  solely to ensure that the pods it selects are isolated by default).
+                items:
+                  description: |-
+                    DomainEgressRule describes a particular set of traffic that is allowed out of pods
+                    matched by a DomainEgressPolicySpec's podSelector. The traffic must match both ports and domains.
+                  properties:
+                    domains:
+                      description: |-
+                        domains is a list of destinations for outgoing traffic of pods selected for this rule.
+                        Items in this list are combined using a logical OR operation. If this field is
+                        empty or missing, this rule matches all destinations (traffic not restricted by
+                        destination). If this field is present and contains at least one item, this rule
+                        allows traffic only if the traffic matches at least one item in the to list.
+                        domain names may be fully qualified or match wildcards.
+                      items:
+                        type: string
+                      type: array
+                    ports:
+                      description: |-
+                        ports is a list of destination ports for outgoing traffic.
+                        Each item in this list is combined using a logical OR. If this field is
+                        empty or missing, this rule matches all ports (traffic not restricted by port).
+                        If this field is present and contains at least one item, then this rule allows
+                        traffic only if the traffic matches at least one port in the list.
+                      items:
+                        description: NetworkPolicyPort describes a port to allow traffic
+                          on
+                        properties:
+                          endPort:
+                            description: |-
+                              endPort indicates that the range of ports from port to endPort if set, inclusive,
+                              should be allowed by the policy. This field cannot be defined if the port field
+                              is not defined or if the port field is defined as a named (string) port.
+                              The endPort must be equal or greater than port.
+                            format: int32
+                            type: integer
+                          port:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: |-
+                              port represents the port on the given protocol. This can either be a numerical or named
+                              port on a pod. If this field is not provided, this matches all port names and
+                              numbers.
+                              If present, only traffic on the specified protocol AND port will be matched.
+                            x-kubernetes-int-or-string: true
+                          protocol:
+                            default: TCP
+                            description: |-
+                              protocol represents the protocol (TCP, UDP, or SCTP) which traffic must match.
+                              If not specified, this field defaults to TCP.
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                type: array
+              podSelector:
+                description: |-
+                  podSelector selects the pods to which this DomainEgressPolicy object applies.
+                  The array of ingress rules is applied to any pods selected by this field.
+                  Multiple network policies can select the same set of pods. In this case,
+                  the ingress rules for each are combined additively.
+                  This field is NOT optional and follows standard label selector semantics.
+                  An empty podSelector matches all pods in this namespace.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: |-
+                        A label selector requirement is a selector that contains values, a key, and an operator that
+                        relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: |-
+                            operator represents a key's relationship to a set of values.
+                            Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: |-
+                            values is an array of string values. If the operator is In or NotIn,
+                            the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                            the values array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                    x-kubernetes-list-type: atomic
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                      map is equivalent to an element of matchExpressions, whose key field is "key", the
+                      operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+            required:
+            - podSelector
+            type: object
+          status:
+            description: DomainEgressPolicyStatus defines the observed state of DomainEgressPolicy
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

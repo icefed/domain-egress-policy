@@ -1,0 +1,130 @@
+{{- if .Values.serviceAccount.create -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "domain-egress-policy.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "domain-egress-policy.labels" . | nindent 4 }}
+  {{- with .Values.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "domain-egress-policy.fullname" . }}-leader-election-role
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: domainegresspolicy
+    app.kubernetes.io/part-of: domainegresspolicy
+  {{- include "domain-egress-policy.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "domain-egress-policy.fullname" . }}-manager-role
+  labels:
+  {{- include "domain-egress-policy.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - policy.icefed.io
+  resources:
+  - domainegresspolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy.icefed.io
+  resources:
+  - domainegresspolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "domain-egress-policy.fullname" . }}-leader-election-rolebinding
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: domainegresspolicy
+    app.kubernetes.io/part-of: domainegresspolicy
+  {{- include "domain-egress-policy.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: '{{ include "domain-egress-policy.fullname" . }}-leader-election-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "domain-egress-policy.fullname" . }}'
+  namespace: '{{ .Release.Namespace }}'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "domain-egress-policy.fullname" . }}-manager-rolebinding
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: domainegresspolicy
+    app.kubernetes.io/part-of: domainegresspolicy
+  {{- include "domain-egress-policy.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: '{{ include "domain-egress-policy.fullname" . }}-manager-role'
+subjects:
+- kind: ServiceAccount
+  name: '{{ include "domain-egress-policy.fullname" . }}'
+  namespace: '{{ .Release.Namespace }}'
+{{- end }}
